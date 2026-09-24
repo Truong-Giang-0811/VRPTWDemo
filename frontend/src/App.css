@@ -15,7 +15,8 @@
 body {
   margin: 0;
   min-width: 1100px;
-  overflow: hidden
+  overflow-x: auto;
+  overflow-y: auto
 }
 
 button,
@@ -28,7 +29,7 @@ input {
 }
 
 .app-shell {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #eef1f4
@@ -122,8 +123,11 @@ input {
 }
 
 .workspace {
-  min-height: 0;
-  flex: 1;
+  position: relative;
+  flex: none;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 560px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 430px;
   transition: grid-template-columns .25s ease
@@ -660,7 +664,7 @@ input {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 14px 18px 100px;
+  padding: 14px 18px 18px;
   background: #fbfcfd
 }
 
@@ -1005,10 +1009,7 @@ input {
 }
 
 .action-footer {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 430px;
+  flex: none;
   padding: 11px 18px 13px;
   background: #fff;
   border-top: 1px solid #e3e8ec;
@@ -1082,10 +1083,6 @@ input {
     grid-template-columns: minmax(0, 1fr) 390px
   }
 
-  .action-footer {
-    width: 390px
-  }
-
   .map-toolbar .mode-hint {
     display: none
   }
@@ -1112,7 +1109,7 @@ input {
 
   .action-footer {
     position: sticky;
-    width: auto
+    bottom: 0
   }
 
   .panel-scroll {
@@ -1135,7 +1132,7 @@ input {
 }
 
 .sidebar-collapsed .collapse-button {
-  position: fixed;
+  position: absolute;
   right: 12px;
   top: 78px;
   z-index: 1600;

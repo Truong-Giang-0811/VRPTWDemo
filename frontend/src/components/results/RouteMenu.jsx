@@ -114,11 +114,6 @@ export default function RouteMenu({ result, selectedRouteIndex, onSelectRoute })
           </div>
         </>
       )}
-
-      <div className="route-menu-hint">
-        <Icon name="info" size={12} />
-        <span>Số trong tuyến là thứ tự khách hàng xe sẽ phục vụ.</span>
-      </div>
     </div>
   );
 }

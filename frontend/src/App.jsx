@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import MapView from "./components/map/MapView";
 import RoutePolyline from "./components/map/RoutePolyline";
 import AddressSearch from "./components/map/AddressSearch";
@@ -24,6 +24,7 @@ export default function App() {
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(null);
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const workspaceRef = useRef(null);
   const { customers, addCustomer, removeCustomer, clearCustomers, setCustomers } = useCustomers();
   const { result, loading, error, runOptimize, clearResult } = useOptimizeResult();
 
@@ -82,6 +83,11 @@ export default function App() {
 
     // Preset chỉ nạp dữ liệu. Chức năng click bản đồ vẫn hoạt động bình thường.
     setInteractionMode("addCustomer");
+  }
+
+  function handleSelectRouteFromMenu(index) {
+    setSelectedRouteIndex(index);
+    workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function resetMap() {
@@ -153,10 +159,10 @@ export default function App() {
       <RouteMenu
         result={result}
         selectedRouteIndex={selectedRouteIndex}
-        onSelectRoute={setSelectedRouteIndex}
+        onSelectRoute={handleSelectRouteFromMenu}
       />
 
-      <main className="workspace">
+      <main className="workspace" ref={workspaceRef}>
         <section className="map-panel">
           <AddressSearch onLocationSelect={handleAddressSelect} />
           <div className="map-toolbar">
