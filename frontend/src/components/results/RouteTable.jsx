@@ -29,6 +29,8 @@ export default function RouteTable({ result, selectedRouteIndex, onSelectRoute }
           const ids = normalizeIds(route);
           const selected = selectedRouteIndex === idx;
           const color = COLORS[idx % COLORS.length];
+          const waitingLabel = route.waiting_time_min != null ? ` · chờ ${Math.round(route.waiting_time_min)} phút` : "";
+          const clusterLabel = route.cluster_id != null ? ` · cụm ${Number(route.cluster_id) + 1}` : "";
 
           return (
             <button
@@ -44,6 +46,8 @@ export default function RouteTable({ result, selectedRouteIndex, onSelectRoute }
                 <span>
                   {ids.length} điểm · {route.distance_km ?? "—"} km
                   {route.duration_min != null ? ` · ${route.duration_min} phút` : ""}
+                  {waitingLabel}
+                  {clusterLabel}
                 </span>
               </span>
 

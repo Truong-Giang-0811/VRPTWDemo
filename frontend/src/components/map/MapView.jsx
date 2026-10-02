@@ -3,6 +3,13 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, ZoomContr
 import L from "leaflet";
 import Icon from "../ui/Icon";
 
+const CLUSTER_COLORS = ["#2563eb", "#16a34a", "#dc2626", "#ca8a04", "#7c3aed", "#0891b2", "#db2777", "#0f766e"];
+
+function getClusterColor(clusterId) {
+  if (clusterId == null || Number.isNaN(Number(clusterId))) return "#1d4ed8";
+  return CLUSTER_COLORS[Math.abs(Number(clusterId)) % CLUSTER_COLORS.length];
+}
+
 const depotIcon = L.divIcon({
   className: "custom-marker-wrap",
   html: '<div class="map-marker depot-marker">D</div>',
@@ -10,12 +17,15 @@ const depotIcon = L.divIcon({
   iconAnchor: [19, 19],
 });
 
-const customerIcon = (id) => L.divIcon({
-  className: "custom-marker-wrap",
-  html: `<div class="map-marker customer-marker">${id}</div>`,
-  iconSize: [34, 34],
-  iconAnchor: [17, 17],
-});
+const customerIcon = (id, clusterId) => {
+  const color = getClusterColor(clusterId);
+  return L.divIcon({
+    className: "custom-marker-wrap",
+    html: `<div class="map-marker customer-marker" style="background:${color};box-shadow:0 10px 22px ${color}2a;border-color:${color};">${id}</div>`,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  });
+};
 
 const selectedIcon = L.divIcon({
   className: "custom-marker-wrap pending-location-wrap",
@@ -136,6 +146,7 @@ export default function MapView({
   onZoomToFit,
   onReset,
   selectedRoute,
+  customerClusterMap = {},
 }) {
   const center = depot ? [depot.lat, depot.lng] : [21.0278, 105.8342];
   const points = [depot, ...customers];
@@ -170,19 +181,28 @@ export default function MapView({
         </Marker>
       )}
 
-      {customers.map((c) => (
-        <Marker key={c.id} position={[c.lat, c.lng]} icon={customerIcon(c.id)}>
-          <Popup>
-            <strong>Khách hàng #{c.id}</strong>
-            <br />
-            Tọa độ: {c.lat.toFixed(5)}, {c.lng.toFixed(5)}
-            <br />
-            Demand: {c.demand} kg
-            <br />
-            Khung giờ: {c.ready_time} – {c.due_time}
-          </Popup>
-        </Marker>
-      ))}
+      {customers.map((c) => {
+        const clusterId = customerClusterMap?.[c.id] ?? customerClusterMap?.[String(c.id)];
+        return (
+          <Marker key={c.id} position={[c.lat, c.lng]} icon={customerIcon(c.id, clusterId)}>
+            <Popup>
+              <strong>Khách hàng #{c.id}</strong>
+              <br />
+              Tọa độ: {c.lat.toFixed(5)}, {c.lng.toFixed(5)}
+              <br />
+              Demand: {c.demand} kg
+              <br />
+              Khung giờ: {c.ready_time} – {c.due_time}
+              {clusterId != null && (
+                <>
+                  <br />
+                  Cụm: {Number(clusterId) + 1}
+                </>
+              )}
+            </Popup>
+          </Marker>
+        );
+      })}
 
       {pendingLatLng && (
         <Marker position={[pendingLatLng.lat, pendingLatLng.lng]} icon={selectedIcon} zIndexOffset={1000}>

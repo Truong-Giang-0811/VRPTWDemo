@@ -2,6 +2,11 @@
 // gọi trực tiếp Flask (CORS đã được bật) để không phụ thuộc proxy của Vite.
 import { API_BASE_URL, apiUrl, ROUTING_URL } from "./apiConfig";
 
+function normalizeRouteGeometry(route) {
+  const points = route?.geometry || [];
+  return Array.isArray(points) ? points : [];
+}
+
 async function loadRoadRoute(route, depot, customersById) {
   const points = [depot, ...route.customer_ids.map((id) => customersById.get(id)), depot];
   if (points.some((point) => !point)) return route;
@@ -28,11 +33,12 @@ async function loadRoadRoute(route, depot, customersById) {
 }
 
 async function enrichWithRoadData(result, depot, customers) {
+  if (!result) return result;
   if (result.routing_source === "osrm") return result;
 
   const customersById = new Map(customers.map((customer) => [customer.id, customer]));
   const enriched = await Promise.allSettled(
-    result.routes.map((route) => loadRoadRoute(route, depot, customersById))
+    (result.routes || []).map((route) => loadRoadRoute(route, depot, customersById))
   );
   const routes = enriched.map((item, index) => item.status === "fulfilled" ? item.value : result.routes[index]);
   const roadRoutes = routes.filter((route) => route.geometry_source === "osrm_browser");
@@ -49,13 +55,26 @@ async function enrichWithRoadData(result, depot, customers) {
   };
 }
 
-export async function optimizeRoutes({ depot, vehicle, customers, algorithm }) {
+async function enrichComparisonResult(result, depot, customers) {
+  if (!result) return result;
+  const enriched = await enrichWithRoadData(result, depot, customers);
+  return enriched;
+}
+
+export async function optimizeRoutes({ depot, vehicle, customers, algorithm, clusteringMode = "distance", timeWeight = 0.35 }) {
   let res;
   try {
     res = await fetch(apiUrl("/optimize"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ depot, vehicle, customers, algorithm }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        depot,
+        vehicle,
+        customers,
+        algorithm,
+        clustering_mode: clusteringMode,
+        time_weight: timeWeight,
+      }),
     });
   } catch {
     throw new Error(
@@ -69,4 +88,41 @@ export async function optimizeRoutes({ depot, vehicle, customers, algorithm }) {
   }
 
   return enrichWithRoadData(await res.json(), depot, customers);
+}
+
+export async function optimizeComparison({ depot, vehicle, customers, algorithm, timeWeight = 0.35 }) {
+  let res;
+  try {
+    res = await fetch(apiUrl("/optimize/compare"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        depot,
+        vehicle,
+        customers,
+        algorithm,
+        time_weight: timeWeight,
+      }),
+    });
+  } catch {
+    throw new Error(
+      `Không kết nối được backend tại ${API_BASE_URL}. Hãy khởi động backend ở cổng 5001.`
+    );
+  }
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Tối ưu thất bại");
+  }
+
+  const payload = await res.json();
+  const [distanceBased, spatiotemporalBased] = await Promise.all([
+    enrichComparisonResult(payload.distance_based, depot, customers),
+    enrichComparisonResult(payload.spatiotemporal_based, depot, customers),
+  ]);
+
+  return {
+    distance_based: distanceBased,
+    spatiotemporal_based: spatiotemporalBased,
+  };
 }
