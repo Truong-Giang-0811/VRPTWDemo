@@ -64,7 +64,7 @@ function ResultColumn({ title, depot, customers, result, selectedRouteIndex, onS
               depot={depot}
               customers={customers}
               pendingLatLng={null}
-              onMapClick={() => {}}
+              onMapClick={() => { }}
               target={null}
               interactionMode={readOnly ? "pan" : "addCustomer"}
               selectedRoute={selectedRouteIndex != null ? result.routes?.[selectedRouteIndex] : null}
@@ -311,50 +311,61 @@ export default function App() {
               />
             </div>
           ) : (
-            <>
-              <AddressSearch onLocationSelect={handleAddressSelect} />
-              <div className="map-toolbar">
-                <button className={interactionMode === "setDepot" ? "active" : ""} onClick={() => { setInteractionMode("setDepot"); setPendingLatLng(null); }}><span className="tool-icon depot"><Icon name="warehouse" size={16} /></span> Đặt kho</button>
-                <button className={interactionMode === "addCustomer" ? "active" : ""} onClick={() => setInteractionMode("addCustomer")}><span className="tool-icon customer"><Icon name="plus" size={16} /></span> Thêm khách</button>
-                <span className="toolbar-divider" />
-                <span className="mode-hint"><Icon name="info" size={14} /> {interactionMode === "setDepot" ? "Click bản đồ để đặt kho" : pendingLatLng ? "Đã chọn vị trí · kiểm tra điểm đánh dấu" : "Click bản đồ để thêm điểm"}</span>
-              </div>
-              <MapView
-                depot={depot}
-                customers={customers}
-                pendingLatLng={pendingLatLng}
-                onMapClick={handleMapClick}
-                target={mapTarget}
-                interactionMode={interactionMode}
-                onZoomToFit={fitAllPoints}
-                onReset={resetMap}
-                selectedRoute={selectedRouteIndex != null ? singleResult?.routes?.[selectedRouteIndex] : null}
-                customerClusterMap={singleClusterMap}
-              >
-                <RoutePolyline
-                  routes={singleResult?.routes}
-                  selectedRouteIndex={selectedRouteIndex}
-                  onSelectRoute={setSelectedRouteIndex}
-                />
-              </MapView>
-              <div className="map-legend">
-                <span><i className="legend-dot depot" /> Kho</span>
-                <span><i className="legend-dot customer" /> Khách hàng</span>
-                {singleResult?.routes?.length ? <span><i className="legend-line" /> Tuyến tối ưu</span> : null}
-              </div>
-              {pendingLatLng && <CustomerForm pendingLatLng={pendingLatLng} onSubmit={handleAddCustomer} onCancel={() => setPendingLatLng(null)} />}
-
+            <div className={`single-view ${singleResult ? "has-result" : ""}`}>
               {singleResult && (
-                <div className="single-results-stack">
-                  <RouteSummary result={singleResult} />
+                <>
+                  <div className="compare-column-header">
+                    <div>
+                      <div className="eyebrow">KẾT QUẢ</div>
+                      <h3>{viewMode === "spatiotemporal" ? "Phân cụm theo khoảng cách + thời gian" : "Phân cụm theo khoảng cách"}</h3>
+                    </div>
+                    <span className="compare-badge">
+                      <Icon name="route" size={13} /> {formatModeLabel(singleResult.clustering_mode)}
+                    </span>
+                  </div>
+                  <RouteSummary result={singleResult} title={formatModeLabel(singleResult.clustering_mode)} modeLabel={singleResult.clustering_mode_label} />
                   <RouteTable
                     result={singleResult}
                     selectedRouteIndex={selectedRouteIndex}
                     onSelectRoute={setSelectedRouteIndex}
                   />
-                </div>
+                </>
               )}
-            </>
+
+              <div className="single-map-wrap">
+                <AddressSearch onLocationSelect={handleAddressSelect} />
+                <div className="map-toolbar">
+                  <button className={interactionMode === "setDepot" ? "active" : ""} onClick={() => { setInteractionMode("setDepot"); setPendingLatLng(null); }}><span className="tool-icon depot"><Icon name="warehouse" size={16} /></span> Đặt kho</button>
+                  <button className={interactionMode === "addCustomer" ? "active" : ""} onClick={() => setInteractionMode("addCustomer")}><span className="tool-icon customer"><Icon name="plus" size={16} /></span> Thêm khách</button>
+                  <span className="toolbar-divider" />
+                  <span className="mode-hint"><Icon name="info" size={14} /> {interactionMode === "setDepot" ? "Click bản đồ để đặt kho" : pendingLatLng ? "Đã chọn vị trí · kiểm tra điểm đánh dấu" : "Click bản đồ để thêm điểm"}</span>
+                </div>
+                <MapView
+                  depot={depot}
+                  customers={customers}
+                  pendingLatLng={pendingLatLng}
+                  onMapClick={handleMapClick}
+                  target={mapTarget}
+                  interactionMode={interactionMode}
+                  onZoomToFit={fitAllPoints}
+                  onReset={resetMap}
+                  selectedRoute={selectedRouteIndex != null ? singleResult?.routes?.[selectedRouteIndex] : null}
+                  customerClusterMap={singleClusterMap}
+                >
+                  <RoutePolyline
+                    routes={singleResult?.routes}
+                    selectedRouteIndex={selectedRouteIndex}
+                    onSelectRoute={setSelectedRouteIndex}
+                  />
+                </MapView>
+                <div className="map-legend">
+                  <span><i className="legend-dot depot" /> Kho</span>
+                  <span><i className="legend-dot customer" /> Khách hàng</span>
+                  {singleResult?.routes?.length ? <span><i className="legend-line" /> Tuyến tối ưu</span> : null}
+                </div>
+                {pendingLatLng && <CustomerForm pendingLatLng={pendingLatLng} onSubmit={handleAddCustomer} onCancel={() => setPendingLatLng(null)} />}
+              </div>
+            </div>
           )}
         </section>
 
